@@ -1,0 +1,35 @@
+package practice2;
+
+public class Worker extends Thread{
+
+	private int workState;
+	private Data data;
+	
+	public Worker(int workState, Data d){
+		this.workState = workState;
+		data = d;
+		this.start();
+	}
+	
+	@Override
+	public void run() {
+		try {
+			for (int i = 0; i < 5; i++) {
+				synchronized (data) {
+					while (workState != data.getState()) {
+						data.wait();
+					}
+					if (workState == 1) {
+						data.Tic();
+					} else if(workState == 2){
+						data.Tak();
+					} else data.Toy();
+					data.notifyAll();
+				}
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+}
