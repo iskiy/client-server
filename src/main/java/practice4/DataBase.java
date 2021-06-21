@@ -1,5 +1,9 @@
 package practice4;
 
+import practice4.Entities.Product;
+import practice4.Entities.User;
+
+import javax.swing.plaf.nimbus.State;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,14 +15,22 @@ public class DataBase {
         try{
             Class.forName("org.sqlite.JDBC");
             con = DriverManager.getConnection("jdbc:sqlite:" + name);
-            PreparedStatement createProductTable = con.prepareStatement("create table if not exists 'product' (" +
+            deleteAll();
+            PreparedStatement pst = con.prepareStatement("create table if not exists 'product' (" +
                     "'id' INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "'name' text," +
                     "'price' double," +
                     "'amount' double" +
                     ");"
             );
-            createProductTable.executeUpdate();
+            pst.executeUpdate();
+            pst = con.prepareStatement("create table if not exists 'users'" +
+                    "( 'id' INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "'login' text unique," +
+                    "'password' text);");
+            pst.executeUpdate();
+
+
         }catch(ClassNotFoundException e){
             System.out.println("Can`t find driver JDBC");
             e.printStackTrace();
@@ -47,6 +59,36 @@ public class DataBase {
         }
     }
 
+    public User insertUser(User user){
+        try{
+            PreparedStatement statement = con.prepareStatement("INSERT INTO users(login, password) VALUES (?, ?)");
+
+            statement.setString(1, user.getLogin());
+            statement.setString(2, user.getPassword());
+
+            statement.executeUpdate();
+            ResultSet resSet = statement.getGeneratedKeys();
+            user.setId(resSet.getInt("last_insert_rowid()"));
+            statement.close();
+            return user;
+        }catch (SQLException e){
+            e.printStackTrace();
+            throw new RuntimeException("Problem with insert user", e);
+        }
+    }
+
+    public User getUserByLogin(String login){
+        try{
+            Statement st = con.createStatement();
+            ResultSet res = st.executeQuery("SELECT * FROM users where login = '" + login + "'");
+            if(res.next())
+                return new User(res.getInt("id"), res.getString("login"), res.getString("password"));
+        } catch(SQLException e) {
+            throw new RuntimeException("Can`t get user", e);
+        }
+        return null;
+    }
+
     public List<Product> getAllProducts(){
         try{
             Statement st = con.createStatement();
@@ -60,6 +102,20 @@ public class DataBase {
         }catch(SQLException e){
             e.printStackTrace();
             throw new RuntimeException("Problems with SQL query for select products", e);
+        }
+    }
+
+    public Product FindProductById(int id){
+        try {
+            Statement st = con.createStatement();
+            ResultSet res = st.executeQuery("SELECT * FROM product WHERE id = " + id + ";");
+
+            if(res.next()){
+                return getProductFromResultSet(res);
+            } else return null;
+        } catch (SQLException e){
+            e.printStackTrace();
+            throw new RuntimeException("Problems with SQL query for select product by id", e);
         }
     }
 
@@ -102,6 +158,17 @@ public class DataBase {
         }
     }
 
+    public void updateProductById(Integer id, UpdateRules rules){
+        String set = rules.getSetString();
+        try{
+            Statement st = con.createStatement();
+            st.executeUpdate("UPDATE product" + set + " where id = " + id + ";");
+        }catch (SQLException e){
+            e.printStackTrace();
+            throw new RuntimeException("Problem with UPDATE product", e);
+        }
+    }
+
     public void deleteProductByCriteria(ProductCriteria criteria){
         String condition = criteria.getSQLCondition();
         try{
@@ -135,6 +202,10 @@ public class DataBase {
             PreparedStatement st = con.prepareStatement("DELETE FROM product");
             st.executeUpdate();
             st = con.prepareStatement("UPDATE 'sqlite_sequence' SET 'seq' = 0 WHERE name = 'product'");
+            st.executeUpdate();
+            st = con.prepareStatement("DELETE FROM users");
+            st.executeUpdate();
+            st = con.prepareStatement("UPDATE 'sqlite_sequence' SET 'seq' = 0 WHERE name = 'users'");
             st.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

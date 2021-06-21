@@ -14,6 +14,10 @@ public class UpdateRules {
         this.amount = amount;
     }
 
+    public boolean isValid(){
+        return amount >= 0 && price >= 0;
+    }
+
     public String getSetString(){
         String res;
         List<String> sets = new ArrayList<>();

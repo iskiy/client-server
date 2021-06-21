@@ -1,4 +1,4 @@
-package practice4;
+package practice4.Entities;
 
 import java.util.Objects;
 
@@ -15,7 +15,11 @@ public class Product {
         this.amount = amount;
     }
 
-    public Product() {
+    public Product(String name) {
+        this.id = null;
+        this.name = name;
+        this.price = 0;
+        this.amount = 0;
     }
 
     public Product(String name, double price, double amount) {
@@ -23,6 +27,10 @@ public class Product {
         this.name = name;
         this.price = price;
         this.amount = amount;
+    }
+
+    public Product() {
+
     }
 
     public Integer getId() {
@@ -56,6 +64,11 @@ public class Product {
     public void setAmount(double amount) {
         this.amount = amount;
     }
+
+    public boolean isValidProduct(){
+        return price >= 0 && amount >= 0;
+    }
+
 
     @Override
     public boolean equals(Object o) {
